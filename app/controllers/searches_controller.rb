@@ -1,9 +1,7 @@
 class SearchesController < ApplicationController
-  def search
-  end
+  def search; end
 
   def foursquare
-
     client_id = ENV['FOURSQUARE_CLIENT_ID']
     client_secret = ENV['FOURSQUARE_SECRET']
 
@@ -18,14 +16,21 @@ class SearchesController < ApplicationController
     body = JSON.parse(@resp.body)
 
     if @resp.success?
-      @venues = body["response"]["venues"]
+      @venues = body['response']['venues']
     else
-      @error = body["meta"]["errorDetail"]
+      @error = body['meta']['errorDetail']
     end
     render 'search'
+  rescue Faraday::TimeoutError
+    @error = 'There was a timeout. Please try again.'
+    render 'search'
+  end
 
-    rescue Faraday::TimeoutError
-      @error = "There was a timeout. Please try again."
-      render 'search'
+  def friends
+    resp = Faraday.get("https://api.foursquare.com/v2/users/self/friends") do |req|
+      req.params['oauth_token'] = session[:token]
+      req.params['v'] = '20160201'
+    end
+    @friends = JSON.parse(resp.body)["response"]["friends"]["items"]
   end
 end
